@@ -30,6 +30,9 @@ def tz(requests, timezone):
     class dynamictzinfo(tzinfo):
         _offset = timedelta(seconds=offset)
 
+        def dst(self, dt):
+            return None
+
         def utcoffset(self, dt):
             return self._offset
 
