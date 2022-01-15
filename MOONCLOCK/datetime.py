@@ -1,26 +1,17 @@
 from adafruit_datetime import *
 
-__tz_cache = {}
-
 
 class RTC:
 
     def __init__(self, requests):
         self.requests = requests
 
-        self.__load_time = None
-        self.__datetime = None
-
     @property
     def datetime(self):
-        import time
-        if not self.__datetime:
-            dt = datetime.fromisoformat(
-                self.requests.get('http://worldtimeapi.org/api/timezone/Etc/UTC', timeout=5).json()['datetime'])
-            self.__load_time = time.monotonic()
-            self.__datetime = datetime.fromtimestamp(dt.timestamp()) + dt.utcoffset()
+        dt = datetime.fromisoformat(
+            self.requests.get('http://worldtimeapi.org/api/timezone/Etc/UTC', timeout=5).json()['datetime'])
 
-        return (self.__datetime + timedelta(seconds=time.monotonic() - self.__load_time)).timetuple()
+        return dt.timetuple()
 
 
 class datetime(datetime):
@@ -30,18 +21,15 @@ class datetime(datetime):
 
 
 def tz(requests, timezone):
-    if not timezone in __tz_cache:
-        offset = requests.get('http://worldtimeapi.org/api/timezone/{}'.format(timezone), timeout=5).json()['raw_offset']
+    offset = requests.get('http://worldtimeapi.org/api/timezone/{}'.format(timezone), timeout=5).json()['raw_offset']
 
-        class dynamictzinfo(tzinfo):
-            _offset = timedelta(seconds=offset)
+    class dynamictzinfo(tzinfo):
+        _offset = timedelta(seconds=offset)
 
-            def utcoffset(self, dt):
-                return self._offset
+        def utcoffset(self, dt):
+            return self._offset
 
-            def tzname(self, dt):
-                return timezone
+        def tzname(self, dt):
+            return timezone
 
-        __tz_cache[timezone] = dynamictzinfo()
-
-    return __tz_cache[timezone]
+    return dynamictzinfo()

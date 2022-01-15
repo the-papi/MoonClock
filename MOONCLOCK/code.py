@@ -2,17 +2,15 @@ import adafruit_requests
 import adafruit_tca9548a
 import board
 import busio
+import font
 import microcontroller
 import rtc
 import socketpool
 import ssl
 import time
-import traceback
 import wifi
 
-from datetime import RTC
-
-from apps import *
+from datetime import RTC, datetime, tz, timedelta
 from display import BetterSSD1306_I2C, DisplayGroup
 
 
@@ -27,9 +25,11 @@ def reset():
         except Exception:
             pass
 
-    print("Resetting....")
+    print("Resetting in 30 seconds...")
     time.sleep(30)
+    print("Setting reset mode...")
     microcontroller.on_next_reset(microcontroller.RunMode.NORMAL)
+    print("Resetting...")
     microcontroller.reset()
 
 
@@ -38,13 +38,6 @@ try:
     from secrets import secrets
 except ImportError:
     print('WiFi secrets are kept in secrets.py, please add them there!')
-    raise
-
-# Get configuration from a conf.py file
-try:
-    from conf import conf
-except ImportError:
-    print('No configuration found in conf.py, please add them there!')
     raise
 
 WIDTH = 128
@@ -67,7 +60,6 @@ print('My MAC addr:', [hex(i) for i in wifi.radio.mac_address])
 
 display_group.render_string('wifi setup', center=True)
 display_group.show()
-time.sleep(1)
 
 connected = False
 
@@ -79,7 +71,6 @@ while not connected:
             display_group.clear()
             display_group.render_string('{0} {1}'.format(font.CHAR_WIFI, wifi_conf['ssid'][:8]), center=False)
             display_group.show()
-            time.sleep(1)
             wifi.radio.connect(wifi_conf['ssid'], wifi_conf['password'])
             print('Connected to {}!'.format(wifi_conf['ssid']))
             print('My IP address is', wifi.radio.ipv4_address)
@@ -94,27 +85,17 @@ while not connected:
             display_group.clear()
             display_group.render_string('{0} '.format(font.CHAR_CROSS), center=True)
             display_group.show()
-            time.sleep(1)
 
     if fail_count == len(secrets):
         display_group.clear()
         display_group.render_string('no wifi!', center=True)
         display_group.show()
-        time.sleep(2)
         display_group.clear()
         display_group.render_string('scanning..', center=True)
         display_group.show()
-        time.sleep(2)
 
 pool = socketpool.SocketPool(wifi.radio)
 requests = adafruit_requests.Session(pool, ssl.create_default_context())
-
-# for i in range(110000000):
-#    try:
-#        print(requests.get('https://api.sunrise-sunset.org/json?lat={}&lng={}&date=today&formatted=0', timeout=5), i)
-#    except Exception as e:
-#        print(e)
-
 
 try:
     display_group.clear()
@@ -122,58 +103,30 @@ try:
     display_group.show()
     rtc.set_time_source(RTC(requests))
 except Exception as e:
-    traceback.print_exception(type(e), e, e.__traceback__)
+    print(e)
     reset()
-
-APPS = {
-    'auto_contrast': AutoContrastApp,
-    'crypto': CryptoApp,
-    'time': TimeApp,
-    'blockheight': BlockHeight,
-    'halving': Halving,
-    'fees': Fees,
-    'text': Text,
-    'marketcap': MarketCap,
-    'moscow_time': MoscowTime,
-    'difficulty': Difficulty,
-    'temperature': Temperature,
-    'xpub': Xpub,
-    'test': TestDisplay,
-    'lnbits_wallet_balance': LnbitsWalletBalance,
-}
 
 
 def main():
-    apps = []
-
-    # Initialize all apps
-    display_group.clear()
-    display_group.render_string('APPS  INIT', center=True)
-    display_group.show()
-    for app_conf in conf['apps']:
-        name = app_conf.pop('name')
-        print('Initializing {} app'.format(name))
-
-        try:
-            apps.append(APPS[name](display_group, requests, **app_conf))
-        except KeyError:
-            raise ValueError('Unknown app {}'.format(name))
-        except Exception as e:
-            print('Initialization of application {} has failed'.format(APPS[name].__name__))
-            print(e)
-            traceback.print_exception(type(e), e, e.__traceback__)
-
-    # Run apps
-    while True:
-        for app in apps:
-            try:
-                print('Running {} app'.format(app.__class__.__name__))
-                app.run()
-            except Exception as e:
-                print('Application {} has crashed'.format(app.__class__.__name__))
-                print(e)
-                traceback.print_exception(type(e), e, e.__traceback__)
-                reset()
+    try:
+        while True:
+            print('A')
+            now = datetime.now(tz(requests, 'Europe/Prague'))
+            print('B')
+            display_group.clear()
+            print('C')
+            display_group.render_string('{}{} {}'.format(now.hour, font.CHAR_WIDECOLON, now.minute), center=True)
+            print('D')
+            display_group.show()
+            print('E')
+            time.sleep(10)
+            print('F')
+    except Exception as e:
+        print('G')
+        print(e)
+        print('H')
+        reset()
+        print('I')
 
 
 if __name__ == '__main__':
