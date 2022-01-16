@@ -10,3 +10,9 @@ def center_string(string, capacity=10):
         string = (' ' * (capacity - len(string))) + string
 
     return string
+
+
+def str_rjust(string, length, char=' '):
+    while len(string) < length:
+        string = char + string
+    return string

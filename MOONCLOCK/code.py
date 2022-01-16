@@ -13,6 +13,7 @@ import wifi
 
 from datetime import RTC, datetime, tz, timedelta
 from display import BetterSSD1306_I2C, DisplayGroup
+from utils import str_rjust
 
 
 display_group = None
@@ -117,7 +118,7 @@ def main():
             print('B', time.monotonic())
             display_group.clear()
             print('C', time.monotonic())
-            display_group.render_string('{}{} {}'.format(now.hour, font.CHAR_WIDECOLON, now.minute), center=True)
+            display_group.render_string('{}{} {}'.format(str_rjust(now.hour, 2, '0'), font.CHAR_WIDECOLON, str_rjust(now.minute, 2, '0')), center=True)
             print('D', time.monotonic())
             display_group.show()
             print('E', time.monotonic())
