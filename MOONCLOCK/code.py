@@ -118,7 +118,7 @@ def main():
             print('B', time.monotonic())
             display_group.clear()
             print('C', time.monotonic())
-            display_group.render_string('{}{} {}'.format(str_rjust(now.hour, 2, '0'), font.CHAR_WIDECOLON, str_rjust(now.minute, 2, '0')), center=True)
+            display_group.render_string('{}{} {}'.format(str_rjust(str(now.hour), 2, '0'), font.CHAR_WIDECOLON, str_rjust(str(now.minute), 2, '0')), center=True)
             print('D', time.monotonic())
             display_group.show()
             print('E', time.monotonic())
