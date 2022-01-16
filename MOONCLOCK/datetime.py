@@ -10,7 +10,8 @@ class RTC:
     def datetime(self):
         print('Loading current time from worldtimeapi.org')
         dt = datetime.fromisoformat(
-            self.requests.get('http://worldtimeapi.org/api/timezone/Etc/UTC', timeout=5).json()['datetime'])
+            self.requests.get('http://worldtimeapi.org/api/timezone/Etc/UTC', timeout=15).json()['datetime'])
+        dt._tzinfo = None
         print('Loaded current time from worldtimeapi.org: ', dt)
 
         return dt.timetuple()
@@ -22,21 +23,14 @@ class datetime(datetime):
         return cls._fromtimestamp(timestamp, False, tz)
 
 
-def tz(requests, timezone):
-    print('Loading', timezone, 'timezone data from worldtimeapi.org')
-    offset = requests.get('http://worldtimeapi.org/api/timezone/{}'.format(timezone), timeout=5).json()['raw_offset']
-    print('Loaded', timezone, 'timezone data from worldtimeapi.org:', offset)
+def tz(requests, tzname):
+    print('Loading', tzname, 'tzname data from worldtimeapi.org')
+    offset = requests.get('http://worldtimeapi.org/api/timezone/{}'.format(tzname), timeout=15).json()['raw_offset']
+    print('Loaded', tzname, 'tzname data from worldtimeapi.org:', offset)
 
-    class dynamictzinfo(tzinfo):
-        _offset = timedelta(seconds=offset)
+    class dynamictimezone(timezone):
 
-        def dst(self, dt):
-            return None
+        def __new__(cls, *args, **kwargs):
+            return super().__new__(cls, timedelta(seconds=offset), name=tzname)
 
-        def utcoffset(self, dt):
-            return self._offset
-
-        def tzname(self, dt):
-            return timezone
-
-    return dynamictzinfo()
+    return dynamictimezone()

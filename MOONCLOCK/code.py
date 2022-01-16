@@ -7,6 +7,7 @@ import microcontroller
 import rtc
 import socketpool
 import ssl
+import traceback
 import time
 import wifi
 
@@ -104,29 +105,31 @@ try:
     rtc.set_time_source(RTC(requests))
 except Exception as e:
     print(e)
+    traceback.print_exception(type(e), e, e.__traceback__)
     reset()
 
 
 def main():
     try:
         while True:
-            print('A')
+            print('A', time.monotonic())
             now = datetime.now(tz(requests, 'Europe/Prague'))
-            print('B')
+            print('B', time.monotonic())
             display_group.clear()
-            print('C')
+            print('C', time.monotonic())
             display_group.render_string('{}{} {}'.format(now.hour, font.CHAR_WIDECOLON, now.minute), center=True)
-            print('D')
+            print('D', time.monotonic())
             display_group.show()
-            print('E')
+            print('E', time.monotonic())
             time.sleep(10)
-            print('F')
+            print('F', time.monotonic())
     except Exception as e:
-        print('G')
-        print(e)
-        print('H')
+        print('G', time.monotonic())
+        print(e, time.monotonic())
+        traceback.print_exception(type(e), e, e.__traceback__)
+        print('H', time.monotonic())
         reset()
-        print('I')
+        print('I', time.monotonic())
 
 
 if __name__ == '__main__':
