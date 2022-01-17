@@ -10,7 +10,7 @@ class RTC:
     def datetime(self):
         print('Loading current time from worldtimeapi.org')
         dt = datetime.fromisoformat(
-            self.requests.get('http://worldtimeapi.org/api/timezone/Etc/UTC', timeout=15).json()['datetime'])
+            self.requests.get('http://worldtimeapi.org/api/timezone/Etc/UTC', timeout=30).json()['datetime'])
         dt._tzinfo = None
         print('Loaded current time from worldtimeapi.org: ', dt)
 
@@ -25,7 +25,7 @@ class datetime(datetime):
 
 def tz(requests, tzname):
     print('Loading', tzname, 'tzname data from worldtimeapi.org')
-    offset = requests.get('http://worldtimeapi.org/api/timezone/{}'.format(tzname), timeout=15).json()['raw_offset']
+    offset = requests.get('http://worldtimeapi.org/api/timezone/{}'.format(tzname), timeout=30).json()['raw_offset']
     print('Loaded', tzname, 'tzname data from worldtimeapi.org:', offset)
 
     class dynamictimezone(timezone):
