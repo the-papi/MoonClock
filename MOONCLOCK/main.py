@@ -1,20 +1,13 @@
-import requests
 import adafruit_tca9548a
-import board
-import busio
+import urequests
 import json
-import microcontroller
-import rtc
-import socketpool
-import ssl
+import machine
+import network
 import time
-import traceback
-import wifi
 
-from datetime import RTC
-
-from apps import *
 from display import BetterSSD1306_I2C, DisplayGroup
+import apps
+import font
 
 
 display_group = None
@@ -30,8 +23,7 @@ def reset():
 
     print("Resetting....")
     time.sleep(30)
-    microcontroller.on_next_reset(microcontroller.RunMode.NORMAL)
-    microcontroller.reset()
+    machine.reset()
 
 
 # Get wifi details and more from a secrets.py file
@@ -44,20 +36,11 @@ except ImportError:
 WIDTH = 128
 HEIGHT = 64
 
-SDA = board.IO10
-SCL = board.IO11
-
-i2c = busio.I2C(SCL, SDA, frequency=1400000)
-
-if i2c.try_lock():
-    print('i2c.scan():' + str(i2c.scan()))
-    i2c.unlock()
+i2c = machine.SoftI2C(sda=machine.Pin(10), scl=machine.Pin(11))
 
 tca = adafruit_tca9548a.TCA9548A(i2c)
 display_group = DisplayGroup(
     [BetterSSD1306_I2C(WIDTH, HEIGHT, tca[i]) for i in range(5)])
-
-print('My MAC addr:', [hex(i) for i in wifi.radio.mac_address])
 
 display_group.render_string('wifi setup', center=True)
 display_group.show()
@@ -88,6 +71,9 @@ display_group.clear()
 display_group.render_string('WIFI  INIT', center=True)
 display_group.show()
 
+sta_if = network.WLAN(network.STA_IF)
+sta_if.active(True)
+
 while not connected:
     fail_count = 0
     for wifi_conf in secrets:
@@ -97,16 +83,27 @@ while not connected:
             display_group.render_string('{0} {1}'.format(font.CHAR_WIFI, wifi_conf['ssid'][:8]), center=False)
             display_group.show()
             time.sleep(1)
-            wifi.radio.connect(wifi_conf['ssid'], wifi_conf['password'])
-            print('Connected to {}!'.format(wifi_conf['ssid']))
-            print('My IP address is', wifi.radio.ipv4_address)
+            import gc
+            print(gc.mem_alloc())
+            print(gc.mem_free())
+            print(gc.collect())
+            print(gc.isenabled())
+            print(gc.mem_alloc())
+            print(gc.mem_free())
+            print(gc.isenabled())
+            print(sta_if.scan())
+            sta_if.connect(wifi_conf['ssid'], wifi_conf['password'])
+            while not sta_if.isconnected():
+                print("connecting to wifi...")
+                time.sleep(1)
             display_group.clear()
             display_group.render_string('{0} '.format(font.CHAR_CHECK), center=True)
             display_group.show()
             connected = True
             break
-        except ConnectionError:
+        except Exception as e:
             fail_count += 1
+            print(e)
             print('Connection to {} has failed. Trying next ssid...'.format(wifi_conf['ssid']))
             display_group.clear()
             display_group.render_string('{0} '.format(font.CHAR_CROSS), center=True)
@@ -123,33 +120,29 @@ while not connected:
         display_group.show()
         time.sleep(2)
 
-pool = socketpool.SocketPool(wifi.radio)
-requests_ = requests.Session(pool, ssl.create_default_context())
-
 try:
     display_group.clear()
     display_group.render_string('TIME  INIT', center=True)
     display_group.show()
-    rtc.set_time_source(RTC(requests_, pool))
+    # machine.RTC(RTC(requests_, pool))
 except Exception as e:
-    traceback.print_exception(type(e), e, e.__traceback__)
     reset()
 
 APPS = {
-    'auto_contrast': AutoContrastApp,
-    'crypto': CryptoApp,
-    'time': TimeApp,
-    'blockheight': BlockHeight,
-    'halving': Halving,
-    'fees': Fees,
-    'text': Text,
-    'marketcap': MarketCap,
-    'moscow_time': MoscowTime,
-    'difficulty': Difficulty,
-    'temperature': Temperature,
-    'xpub': Xpub,
-    'test': TestDisplay,
-    'lnbits_wallet_balance': LnbitsWalletBalance,
+    'auto_contrast': apps.AutoContrastApp,
+    'crypto': apps.CryptoApp,
+    'time': apps.TimeApp,
+    'blockheight': apps.BlockHeight,
+    'halving': apps.Halving,
+    'fees': apps.Fees,
+    'text': apps.Text,
+    'marketcap': apps.MarketCap,
+    'moscow_time': apps.MoscowTime,
+    'difficulty': apps.Difficulty,
+    'temperature': apps.Temperature,
+    'xpub': apps.Xpub,
+    'test': apps.TestDisplay,
+    'lnbits_wallet_balance': apps.LnbitsWalletBalance,
 }
 
 
@@ -165,13 +158,12 @@ def main():
         print('Initializing {} app'.format(name))
 
         try:
-            apps.append(APPS[name](display_group, requests_, **app_conf))
+            apps.append(APPS[name](display_group, **app_conf))
         except KeyError:
             raise ValueError('Unknown app {}'.format(name))
         except Exception as e:
             print('Initialization of application {} has failed'.format(APPS[name].__name__))
             print(e)
-            traceback.print_exception(type(e), e, e.__traceback__)
 
     # Run apps
     while True:
@@ -182,7 +174,6 @@ def main():
             except Exception as e:
                 print('Application {} has crashed'.format(app.__class__.__name__))
                 print(e)
-                traceback.print_exception(type(e), e, e.__traceback__)
                 reset()
 
 

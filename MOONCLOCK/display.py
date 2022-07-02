@@ -1,25 +1,24 @@
-import adafruit_ssd1306
+import ssd1306
 
 from font import get_symbol_for_character
 from utils import center_string
 
 
-class BetterSSD1306_I2C(adafruit_ssd1306.SSD1306_I2C):
-
+class BetterSSD1306_I2C(ssd1306.SSD1306_I2C):
     def render_character(self, character, x_offset=0):
         self.render_symbol(get_symbol_for_character(character), x_offset=x_offset)
-
     def render_symbol(self, symbol, x_offset=0):
         size = symbol[0]
-
         for i in range(len(symbol[1])):
             row = i // size[0]
             row_start_pos = row * self.width + 1
             row_end_pos = (row + 1) * self.width - 1 + 1
             index = row_start_pos + x_offset + (i % size[0])
-
             if row_start_pos <= index <= row_end_pos:
-                self.buffer[index] = symbol[1][i]
+                try:
+                    self.buffer[index] = symbol[1][i]
+                except IndexError:
+                    pass
 
 
 class DisplayGroup:

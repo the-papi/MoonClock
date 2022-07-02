@@ -1,15 +1,14 @@
 import font
 import time
 
-from datetime import datetime, tz, timedelta
+# from datetime import datetime, tz, timedelta
 from logo import get_logo, get_logos
 from utils import str_rjust, str_align, number_to_human
 
 
 class App:
-    def __init__(self, display_group, requests, align='right', duration=30, update_frequency=None):
+    def __init__(self, display_group, align='right', duration=30, update_frequency=None):
         self.display_group = display_group
-        self.requests = requests
         self.duration = duration
         self.align = align
         self.update_frequency = update_frequency if update_frequency is not None else self.duration

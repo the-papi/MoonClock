@@ -1,4 +1,4 @@
-from adafruit_datetime import *
+import datetime
 from ntp import NTP
 
 __tz_cache = {}
@@ -6,7 +6,7 @@ __tz_cache = {}
 
 class RTC:
 
-    def __init__(self, requests, socketpool):
+    def __init__(self):
         self.requests = requests
         self.socketpool = socketpool
         self.ntp = NTP(socketpool)
